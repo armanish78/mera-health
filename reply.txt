@@ -1,0 +1,19 @@
+Hi Meenakshi,
+
+We put together a local review tool for your front desk to help call patients who may need diabetes follow-up.
+
+To run it on your laptop:
+1. Run: pip install -r requirements.txt
+2. Run: streamlit run app.py
+
+Because your system export didn't include a direct diabetes diagnosis column, our tool identifies 122 candidate patients by looking across Diabetology visits, clinical notes, diabetes prescriptions, and blood sugar labs. For each patient, your staff can see the exact reason they were flagged.
+
+Key points for your team:
+- 28 patients have a past scheduled appointment and are flagged as due for follow-up.
+- 18 patients have an upcoming scheduled appointment.
+- 76 patients have no return date recorded in the system, though doctors often noted recall times in the visit text. We labeled these for staff review rather than guessing a due date.
+- We used September 29, 2026 as a provisional reference date based on your records, but please confirm your intended date.
+- Shared and missing phone numbers are clearly flagged so your team can verify patient identities before calling.
+
+Best regards,
+mera.health team
