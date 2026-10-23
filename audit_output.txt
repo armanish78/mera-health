@@ -1,0 +1,137 @@
+===========================================================================
+MERA.HEALTH DATA AUDIT - REPRODUCIBLE EXPLORATORY REPORT
+Data directory: data/raw
+===========================================================================
+
+1. DATASET DIMENSIONS & COLUMN SCHEMAS
+-------------------------------------------------------
+  patients.csv      :   300 rows | 6 columns: ['mrn', 'name', 'dob', 'sex', 'phone', 'registered_on']
+  visits.csv        :   815 rows | 7 columns: ['visit_id', 'mrn', 'visit_date', 'department', 'doctor', 'notes', 'next_appointment']
+  lab_results.csv   :   425 rows | 6 columns: ['mrn', 'test_name', 'value', 'unit', 'reference_range', 'collected_on']
+  prescriptions.csv :   540 rows | 5 columns: ['mrn', 'visit_id', 'drug', 'dose', 'prescribed_on']
+  Total records     :  2080 rows across all files
+
+2. MISSING VALUES & DUPLICATES
+-------------------------------------------------------
+Missing Values by Table and Column:
+  patients.csv       [phone]: 8 missing (2.67%)
+  visits.csv         [next_appointment]: 582 missing (71.41%)
+  lab_results.csv    [unit]: 12 missing (2.82%)
+  lab_results.csv    [reference_range]: 8 missing (1.88%)
+  prescriptions.csv  : 0 missing values across all columns
+
+Duplicate Records Check:
+  patients.csv      : 0 duplicate rows (across 0 distinct record sets)
+  visits.csv        : 0 duplicate rows (across 0 distinct record sets)
+  lab_results.csv   : 4 duplicate rows (across 4 distinct record sets)
+  prescriptions.csv : 0 duplicate rows (across 0 distinct record sets)
+  Unique patients MRN : 300 / 300
+  Unique visit IDs    : 815 / 815
+  Unique (visit_id, drug) in rx: 540 / 540
+
+3. REFERENTIAL INTEGRITY & ID CONSISTENCY
+-------------------------------------------------------
+  Visits MRNs not in patients        : 0
+  Labs MRNs not in patients          : 0
+  Prescriptions MRNs not in patients : 0
+  Prescriptions visit_ids not in visits: 0
+  Patients with 0 visits             : 0
+  Patients with 0 visits/labs/rx     : 0
+  Unique patient MRNs in visits.csv         : 300
+  Unique patient MRNs in lab_results.csv    : 143
+  Unique patient MRNs in prescriptions.csv  : 193
+  Unique visit_id in prescriptions.csv      : 321
+  Prescription date vs Visit date mismatches: 0
+  Prescription MRN vs Visit MRN mismatches   : 0
+
+4. DATE FORMATS, BOUNDS & ANOMALIES
+-------------------------------------------------------
+  patients.dob               : 300 valid,   0 missing,   0 unparseable | formats: {'YYYY-MM-DD': 300}
+  patients.registered_on     : 300 valid,   0 missing,   0 unparseable | formats: {'YYYY-MM-DD': 300}
+  visits.visit_date          : 815 valid,   0 missing,   0 unparseable | formats: {'YYYY-MM-DD': 815}
+  visits.next_appointment    : 233 valid, 582 missing,   0 unparseable | formats: {'YYYY-MM-DD': 233}
+  lab_results.collected_on   : 425 valid,   0 missing,   0 unparseable | formats: {'DD Mon YY': 35, 'DD/MM/YYYY': 390}
+  prescriptions.prescribed_on: 540 valid,   0 missing,   0 unparseable | formats: {'YYYY-MM-DD': 540}
+
+Observed Chronological Bounds (Valid Dates Only):
+  patients.registered_on  : 2016-04-05 to 2026-09-29
+  visits.visit_date       : 2015-03-28 to 2026-09-29
+  visits.next_appointment : 2023-11-07 to 2027-03-09
+  lab_results.collected_on: 2023-10-02 to 2027-02-27
+  prescriptions.prescribed: 2023-10-02 to 2026-09-29
+
+Chronological Integrity Checks:
+  Visits with visit_date < registered_on: 1
+  Labs with collected_on > provisional reference date (2026-09-29): 2
+  Scheduled next_appointment <= provisional reference date : 206
+  Scheduled next_appointment > provisional reference date  : 27
+  Patients with DOB after registration date          : 1
+  Visits predating patient DOB                       : 4 records, 2 patients
+  Lab records predating patient DOB                  : 2 records, 1 patient
+  Prescriptions predating patient DOB                : 3 records, 1 patient
+  Scheduled appts predating patient DOB              : 2 records, 1 patient
+  Scheduled next_appointment before its visit date   : 0
+
+5. CONTACT DATA QUALITY & REACHABILITY
+-------------------------------------------------------
+  Total registered patients             : 300
+  Patients with missing phone number     : 8
+  Patients with populated phone number   : 292
+  Distinct phone numbers                : 282
+  Phone numbers shared by multiple pts  : 7
+  Total patient records sharing a phone : 17
+  Phone string lengths distribution     : {10: 292}
+
+6. FOUR DIABETES-RELATED EVIDENCE INDICATORS
+-------------------------------------------------------
+  Indicator 1: Diabetology Department Visits
+    Method   : visits[department == 'Diabetology']
+    Count    : 115 visits across 54 unique patients
+
+  Indicator 2: Clinical Note Keyword Matches (Exploratory)
+    Method   : Regex token search on visits.notes (exploratory, not clinical diagnosis)
+    Tokens   : diabet*, diabetes, diabetic, dm, dm2, t2dm, type 2, niddm, hba1c, a1c, fbs, ppbs, grbs, sugars, oha
+    Count    : 283 visits across 112 unique patients
+
+  Indicator 3: Antidiabetic Prescriptions
+    Method   : Substring match on antidiabetic drug classes in prescriptions.drug
+    Classes  : Biguanides, Sulfonylureas, DPP-4i, SGLT-2i, Insulins
+    Count    : 280 prescriptions (31 distinct drug strings) across 93 unique patients
+
+  Indicator 4: Glycemic Lab Tests
+    Method   : Matching test_name against glycemic biomarkers in lab_results.csv
+    Tests    : HbA1c/A1C/Glycated Hb, Fasting Glucose/FBS, Post-Prandial/PPBS
+    Count    : 300 lab tests across 111 unique patients
+
+7. COHORT OVERLAP ANALYSIS
+-------------------------------------------------------
+  Total registered patient denominator  : 300
+  Patients with ANY diabetes indicator   : 122
+  Patients with ALL 4 indicators         : 50
+  Patients with Notes, Rx, AND Labs      : 85
+  Patients with ONLY Glycemic Labs       : 7
+  Patients with ONLY Notes Matches       : 6
+  Patients with ONLY Prescriptions       : 0
+
+  Specialty Context - Metformin in OBG:
+    Total Metformin prescriptions        : 128
+    Metformin prescribed in OBG dept     : 10 prescriptions across 5 patients
+
+8. IDENTIFIED AMBIGUITIES & METHODOLOGICAL LIMITATIONS
+-------------------------------------------------------
+  [!] The following points CANNOT be resolved by data exploration alone:
+      1. Authoritative 'Diabetic' Definition: Clinical team must decide whether
+         to require physician diagnosis, active pharmacotherapy, lab cutoffs,
+         or a consensus combination. Simple keyword or drug matches capture
+         non-diabetic entities (e.g., Metformin for PCOS, pediatric family history).
+      2. Provisional Reference Date: Visit and prescription records end on 2026-09-29,
+         while two lab records carry later dates. The reference date requires hospital
+         confirmation rather than assuming a universal export cutoff.
+      3. Overdue Cadence for Blank Dates: 582 of 815 visits lack next_appointment.
+         Whether to parse natural language review text, apply clinical defaults
+         (e.g., 90/180 days), or flag as unscheduled requires operational policy.
+      4. Specialty Continuity: Whether a visit to an acute/unrelated department
+         (e.g., Orthopaedics, Dermatology) resets the chronic diabetes recall clock.
+===========================================================================
+Audit script completed successfully.
+===========================================================================
